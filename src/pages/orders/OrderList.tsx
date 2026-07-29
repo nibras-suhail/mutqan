@@ -67,7 +67,7 @@ export function OrderList() {
                 <Link to={`/orders/${order.id}/edit`}>
                   <Button variant="ghost" size="sm"><Edit2 className="w-4 h-4" /></Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={() => deleteOrder(order.id)}>
+                <Button variant="ghost" size="sm" onClick={async () => { try { await deleteOrder(order.id) } catch { alert('لا يمكن حذف الطلب - قد لا تملك الصلاحية') } }}>
                   <Trash2 className="w-4 h-4 text-danger" />
                 </Button>
               </div>

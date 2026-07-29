@@ -55,10 +55,11 @@ export function useOrders() {
   }
 
   async function deleteOrder(id: string): Promise<void> {
-    await supabase
+    const { error } = await supabase
       .from('orders')
       .delete()
       .eq('id', id)
+    if (error) throw error
     setOrders(prev => prev.filter(o => o.id !== id))
   }
 

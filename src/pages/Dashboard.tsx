@@ -66,7 +66,7 @@ export function Dashboard() {
 
   async function loadActivities() {
     const [o, p, t, pay] = await Promise.all([
-      supabase.from('orders').select('*, assignedUser:users!assigned_to(name)').order('created_at', { ascending: false }).limit(5) as any,
+      supabase.from('orders').select('*, creatorUser:users!created_by(name), assignedUser:users!assigned_to(name)').order('created_at', { ascending: false }).limit(5) as any,
       supabase.from('payments').select('*, order:orders!order_id(*), creator:users!created_by(name)').order('created_at', { ascending: false }).limit(5) as any,
       supabase.from('transfers').select('*, fromUser:users!from_user(name), toUser:users!to_user(name)').order('created_at', { ascending: false }).limit(5) as any,
       supabase.from('payments').select('order_id, amount'),
@@ -79,14 +79,18 @@ export function Dashboard() {
     const merged: any[] = []
 
     o.data?.forEach((r: any) => merged.push({
-      id: 'o-'+r.id, type: 'order', partnerName: r.assignedUser?.name || '',
+      id: 'o-'+r.id, type: 'order',
+      userId: r.created_by || r.assigned_to,
+      partnerName: r.creatorUser?.name || r.assignedUser?.name || '',
       summary: `${r.customer_name} (${r.order_no})`,
       time: r.created_at,
       order: r
     }))
 
     p.data?.forEach((r: any) => merged.push({
-      id: 'p-'+r.id, type: 'payment', partnerName: r.creator?.name || '',
+      id: 'p-'+r.id, type: 'payment',
+      userId: r.created_by,
+      partnerName: r.creator?.name || '',
       summary: `${r.amount} ${r.method === 'cash' ? 'نقد' : 'تحويل'} (${r.order?.order_no || ''})`,
       time: r.created_at,
       payment: r,
@@ -94,7 +98,9 @@ export function Dashboard() {
     }))
 
     t.data?.forEach((r: any) => merged.push({
-      id: 't-'+r.id, type: 'transfer', partnerName: r.fromUser?.name || '',
+      id: 't-'+r.id, type: 'transfer',
+      userId: r.from_user,
+      partnerName: r.fromUser?.name || '',
       summary: `${r.amount} ← ${r.toUser?.name || ''}`,
       time: r.created_at,
       transfer: r
@@ -141,8 +147,9 @@ export function Dashboard() {
           <div className="space-y-1">
             {activities.map(a => {
               const isOpen = expandedId === a.id
-              const partnerColor = getPartnerColor(a.partnerName)
-              const displayName = getPartnerDisplayName(a.partnerName)
+              const isMe = a.userId && a.userId === profile?.id
+              const displayName = isMe ? 'أنا' : getPartnerDisplayName(a.partnerName)
+              const partnerColor = getPartnerColor(isMe ? (profile?.name || '') : a.partnerName)
               const order = a.order
               const paid = order ? (paidMap[order.id] || 0) : 0
               const remaining = order ? (Number(order.repair_cost) - paid) : 0
@@ -152,20 +159,24 @@ export function Dashboard() {
                   <div
                     onClick={() => setExpandedId(isOpen ? null : a.id)}
                     className={cn(
-                      'flex items-center justify-between py-2 px-3 rounded-lg cursor-pointer transition-colors text-sm',
+                      'py-2 px-3 rounded-lg cursor-pointer transition-colors text-sm',
                       'hover:bg-gray-100', isOpen && 'bg-blue-50'
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span>{typeIcons[a.type] || '•'}</span>
-                      <span className={cn('font-medium', partnerColor)}>{displayName}</span>
-                      <span className="text-gray-400">—</span>
-                      <span className="text-gray-500">{typeLabels[a.type] || ''}</span>
-                      <span className="text-gray-700 truncate">{a.summary}</span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-gray-400">{formatDate(a.time)}</span>
-                      {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{typeIcons[a.type] || '•'}</span>
+                          <span className={cn('font-medium', partnerColor)}>{displayName}</span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-500">{typeLabels[a.type] || ''}</span>
+                        </div>
+                        <p className="text-gray-700 truncate mt-0.5">{a.summary}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                        <span className="text-xs text-gray-400 whitespace-nowrap">{formatDate(a.time)}</span>
+                        {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
+                      </div>
                     </div>
                   </div>
 
