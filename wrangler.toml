@@ -1,0 +1,7 @@
+name = "mutqan"
+compatibility_date = "2026-07-29"
+
+pages_build_output_dir = "dist"
+
+[env.production]
+vars = { VITE_SUPABASE_URL = "https://gljukvhqmdcrktsavpij.supabase.co", VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsanVrdmhxbWRjcmt0c2F2cGlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNDI3MzAsImV4cCI6MjEwMDkxODczMH0.uo34pbl8h1LK1Loz9N3myCk1fZzSG5JmldP-kuC0S6U" }
